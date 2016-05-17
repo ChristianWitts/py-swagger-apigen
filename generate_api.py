@@ -73,11 +73,17 @@ def generate_api(config):
         routing_table.append((path_spec, resource_name))
 
         for method, description in endpoints.iteritems():
-            m = []
-            for parameter in sorted(description['parameters'], key=lambda k: k["required"], reverse=True):
+            m, required, body_schema = [], [], ''
+            for parameter in sorted(description['parameters'], key=lambda k: k['required'], reverse=True):
                 # Put the required parameters before optional
-                m.append(parameter['name'])
-            methods.append([method, m])
+                if parameter['in'] == 'path':
+                    m.append(parameter['name'])
+                if parameter['required'] and parameter['in'] == 'path':
+                    required.append(parameter['name'])
+                if parameter['in'] == 'body':
+                    body_schema = parameter['schema']['$ref'].split('/')[-1].upper()
+
+            methods.append([method, m, required, body_schema])
 
         resources.append([resource_name, methods])
 
