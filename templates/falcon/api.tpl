@@ -5,10 +5,14 @@ import jsonschema
 import schemas
 
 
-{{ name.upper() }} = {{ valid_schema }}
+{%- for resource, methods in resources %}
+class {{ resource }}:
+    {%- for method, parameters in methods %}
 
-class {{name}}:
-    {%- for method, values in methods.iteritems() %}
-    def {{ method.lower() }}(self):
+    def on_{{ method.lower() }}(self, req, resp{{ parameters.__len__() and ', ' or ''}}{{ parameters | join(', ')}}):
         pass
     {% endfor %}
+
+
+{%- endfor %}
+

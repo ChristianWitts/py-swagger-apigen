@@ -66,9 +66,26 @@ def generate_entrypoint(routing_table):
 
 def generate_api(config):
     routing_table = []
+    resources = []
     for path_spec, endpoints in config['paths'].iteritems():
+        methods = []
         resource_name = get_resource_name(path_spec)
         routing_table.append((path_spec, resource_name))
+
+        for method, description in endpoints.iteritems():
+            m = []
+            for parameter in sorted(description['parameters'], key=lambda k: k["required"], reverse=True):
+                # Put the required parameters before optional
+                m.append(parameter['name'])
+            methods.append([method, m])
+
+        resources.append([resource_name, methods])
+
+    with open('templates/{}/api.tpl'.format(TARGET), 'r') as t:
+        template = Template(t.read())
+
+    with open('{}/api.py'.format(PROJECT), 'w') as f:
+        f.write(template.render(resources=resources))
 
     generate_entrypoint(routing_table)
 
