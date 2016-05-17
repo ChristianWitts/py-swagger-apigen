@@ -35,8 +35,8 @@ def create_base(destination):
 
 def get_resource_name(path_spec):
     parts = path_spec.split('/')
-    return ''.join(part.title() for part in parts
-                   if part[0] != '{')
+    return '{}Resource'.format(''.join(part.title() for part in parts
+                                       if part and part[0] != '{'))
 
 
 def generate_validation_schemas(destination, definitions):
@@ -50,9 +50,22 @@ def generate_validation_schemas(destination, definitions):
         s.write(template.render(schemas=schemas))
 
 
+def generate_entrypoint(destination, routing_table):
+    middlewares = ('RequireJSON', 'JSONTranslator')
+    with open('templates/falcon/main.tpl', 'r') as t:
+        template = Template(t.read())
+
+    with open('{}/main.py'.format(destination), 'w') as f:
+        f.write(template.render(routing_table=routing_table, middlewares=middlewares))
+
+
 def generate_api(destination, config):
+    routing_table = []
     for path_spec, endpoints in config['paths'].iteritems():
         resource_name = get_resource_name(path_spec)
+        routing_table.append((path_spec, resource_name))
+
+    generate_entrypoint(destination, routing_table)
 
 
 def copy_ui(destination):
@@ -80,7 +93,7 @@ def generate(destination, swagger, ui=False):
     if ui:
         copy_ui(destination)
     generate_validation_schemas(destination, spec['definitions'])
-    # generate_api(destination, spec)
+    generate_api(destination, spec)
 
 
 if __name__ == '__main__':
